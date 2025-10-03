@@ -16,7 +16,7 @@ import os
 
 brasil_tz = pytz.timezone('America/Sao_Paulo')
 
-# zip_path = "mortalidade.zip"
+# zip_path = "mortalidade (3).zip"
 # a = '.'
 
 # with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -196,13 +196,17 @@ def carregar_dim(nome_dim, tabela_dw, batch_size=500):
         rows_carga = []
         for r in rows:
             r_limpo = []
-            for val in r[:-1]:
-              if val is None:
-                  r_limpo.append(-1)
-              elif isinstance(val, str):
-                  r_limpo.append(val.strip().lower())
-              else:
+            for i, val in enumerate(r[:-1]):
+              if i == 0:
                   r_limpo.append(val)
+              else:
+                  if val is None:
+                      r_limpo.append(-1)
+                  elif isinstance(val, str):
+                      r_limpo.append(val.strip().lower())
+                  else:
+                      r_limpo.append(val)
+
 
             r_limpo.append(agora)
             rows_carga.append(tuple(r_limpo))
@@ -254,7 +258,7 @@ def calcular_faixa_etaria(idade):
   else:
     return 10
 
-def carregar_fato_obito(dm_file, dw_file, full_load=True, data_inicio=None):
+def carregar_fato_obito(con_dw, con_dm, full_load=True, data_inicio=None):
   agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
   with sqlite3.connect(dw_file) as conn_dw, sqlite3.connect(dm_file) as conn_dm:
@@ -381,7 +385,7 @@ def exportar_dm_para_csv(dm_file):
       df.to_csv(nome_csv, sep=';', index=False, encoding='utf-8-sig')
       print(f"\n{nome_csv} exportado ({len(df)} linhas)")
 
-dw_file = "mortalidade.db"
+dw_file = "mortalidade (3).db"
 dm_file = "mortalidade_dm.db"
 
 con_dw = sqlite3.connect(dw_file)
@@ -400,6 +404,6 @@ with sqlite3.connect(dm_file) as con_dm, sqlite3.connect(dw_file) as con_dw:
     carregar_dim("DIME_CID", "DWCD_CID")
     carregar_dim("DIME_ESCOLARIDADE", "DWCD_ESCOLARIDADE")
 
-    carregar_fato_obito("mortalidade_dm.db", "mortalidade.db", full_load=True)
+    carregar_fato_obito(con_dm, con_dw, full_load=True)
 
     exportar_dm_para_csv("mortalidade_dm.db")
